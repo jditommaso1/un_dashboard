@@ -36,18 +36,12 @@
   const fmt = (s) => s.toFixed(2);
 
   // ---------- Colour ----------
-  const RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]; // steps 100-700
-  function isDark() {
-    const t = document.documentElement.dataset.theme;
-    return t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
-  }
-  let color;
-  function buildColor() {
-    const ramp = isDark() ? RAMP.slice().reverse() : RAMP; // dark mode: low recedes into the dark surface
-    color = d3.scaleLinear().domain(ramp.map((_, i) => i / (ramp.length - 1))).range(ramp)
-      .interpolate(d3.interpolateLab).clamp(true);
-  }
-  buildColor();
+  // Diverging: vivid red (opposed) -> dim grey (0.5, neutral) -> vivid blue (aligned). The inner
+  // stops keep chroma high until close to 0.5, so moderate scores stay saturated rather than greyish.
+  const color = d3.scaleLinear()
+    .domain([0, 0.3, 0.5, 0.7, 1])
+    .range(["#ff1e46", "#e8325e", "#5a5f7a", "#2f86f0", "#14b8ff"])
+    .interpolate(d3.interpolateLab).clamp(true);
 
   // ---------- State (mirrored in the URL hash) ----------
   const state = { ref: 2, year: 1985, sel: null };
@@ -101,7 +95,12 @@
   // ---------- Map ----------
   const W = 960;
   const fc = { type: "FeatureCollection", features };
-  const projection = d3.geoEqualEarth().fitWidth(W - 16, fc);
+  // Equirectangular with standard parallel 23°: x = λ·cos 23°, y = φ. Relative to plain
+  // equirectangular it is 8% taller for its width, so the narrower (92%) map keeps full height.
+  const K = Math.cos(23.07 * Math.PI / 180); // 0.92
+  const eqRaw = (l, p) => [l * K, p];
+  eqRaw.invert = (x, y) => [x / K, y];
+  const projection = d3.geoProjection(eqRaw).fitWidth(W - 16, fc);
   const path = d3.geoPath(projection);
   const [[, by0], [, by1]] = path.bounds(fc);
   projection.translate([projection.translate()[0] + 8, projection.translate()[1] - by0 + 8]);
@@ -120,8 +119,20 @@
   hatch("pat-occ", "--occupied-bg", "--occupied-line", 135, 3.5, 1.2);
   const repLine = hatch("pat-rep", "--nonmember", "--nonmember", 45, 5, 2.2);
 
-  const root = svg.append("g");
-  root.append("rect").attr("class", "ocean").attr("width", W).attr("height", H);
+  // Glow: a tight and a wide blur of the countries layered under the crisp shapes. The filter sits
+  // on an untransformed wrapper so the halo keeps its on-screen size when zoomed.
+  const glow = defs.append("filter").attr("id", "glow").attr("x", "-5%").attr("y", "-5%")
+    .attr("width", "110%").attr("height", "110%").attr("color-interpolation-filters", "sRGB");
+  glow.append("feGaussianBlur").attr("in", "SourceGraphic").attr("stdDeviation", 1.6).attr("result", "near");
+  glow.append("feGaussianBlur").attr("in", "SourceGraphic").attr("stdDeviation", 6).attr("result", "far");
+  glow.append("feColorMatrix").attr("in", "far").attr("type", "matrix")
+    .attr("values", "1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.9 0").attr("result", "farDim");
+  const merge = glow.append("feMerge");
+  ["farDim", "near", "SourceGraphic"].forEach((r) => merge.append("feMergeNode").attr("in", r));
+
+  svg.append("rect").attr("class", "ocean").attr("width", W).attr("height", H);
+  const root = svg.append("g").attr("filter", "url(#glow)").append("g");
+  root.append("path").attr("class", "graticule").attr("d", path(d3.geoGraticule10()));
   const countryPaths = root.append("g").selectAll("path").data(features).join("path")
     .attr("class", "country").attr("d", path);
   const dotted = features.filter((f) => f.properties.pt);
@@ -217,7 +228,7 @@
     const refName = nameOf(state.ref, state.year);
     let html = `<div class="tt-name">${d.name}</div>`;
     if (d.score != null && d.n >= MIN_VOTES) {
-      html += `<div class="tt-score">${fmt(d.score)}</div><div class="tt-sub">agreement with ${refName} on ${d.n} contested vote${d.n === 1 ? "" : "s"}</div>`;
+      html += `<div class="tt-score" style="color:${color(d.score)}">${fmt(d.score)}</div><div class="tt-sub">agreement with ${refName} on ${d.n} contested vote${d.n === 1 ? "" : "s"}</div>`;
     } else if (d.score != null) {
       html += `<div class="tt-sub">${d.sub} — ${fmt(d.score)} on ${d.n} vote${d.n === 1 ? "" : "s"}</div>`;
     } else if (d.sub) {
@@ -263,6 +274,7 @@
         <span class="ramp-title">Agreement with ${refName}</span>
         <span class="ramp-bar" style="background:linear-gradient(to right,${stops})"></span>
         <span class="ramp-ticks"><span>0</span><span>0.25</span><span>0.5</span><span>0.75</span><span>1</span></span>
+        <span class="ramp-words"><span>Mostly opposed</span><span>Neutral</span><span>Mostly aligned</span></span>
       </div>
       <div class="keys">
         <span class="key">${swatch("background:var(--ref)")}Reference</span>
@@ -299,8 +311,7 @@
   }
 
   // ---------- Chart ----------
-  const panelEmpty = document.getElementById("panel-empty");
-  const panelBody = document.getElementById("panel-body");
+  const panel = document.getElementById("panel");
   const chartEl = document.getElementById("chart");
   document.getElementById("panel-close").addEventListener("click", () => select(null));
   document.getElementById("make-ref").addEventListener("click", () => {
@@ -312,12 +323,9 @@
   });
 
   // Keyboard/list access to the chart without the map.
-  const pick = document.createElement("select");
-  pick.setAttribute("aria-label", "Show chart for a country");
-  pick.append(new Option("Or choose a country…", ""));
+  const pick = document.getElementById("pick");
   byName.forEach(([c, v]) => pick.append(new Option(v.name, c)));
-  pick.addEventListener("change", () => { if (pick.value) select(+pick.value); pick.value = ""; });
-  panelEmpty.append(pick);
+  pick.addEventListener("change", () => select(pick.value ? +pick.value : null));
 
   async function chartSeries(target, ref) {
     const tp = predOf(target), rp = predOf(ref);
@@ -335,24 +343,23 @@
   let chartToken = 0;
   let chartX = null;
   async function renderChart() {
+    const token = ++chartToken;
+    pick.value = state.sel == null ? "" : String(state.sel);
     if (state.sel == null) {
-      panelEmpty.hidden = false;
-      panelBody.hidden = true;
+      panel.hidden = true;
       return;
     }
-    const token = ++chartToken;
     const target = state.sel, ref = state.ref;
     const series = await chartSeries(target, ref);
     if (token !== chartToken) return;
-    panelEmpty.hidden = true;
-    panelBody.hidden = false;
+    panel.hidden = false;
     const tName = country(target).name, rName = country(ref).name;
     document.getElementById("chart-title").textContent = `${tName} and ${rName}`;
-    document.getElementById("chart-sub").textContent = "Agreement on contested General Assembly votes, by session";
+    document.getElementById("chart-sub").textContent = "Agreement on contested votes, by session";
     document.getElementById("make-ref").textContent = `Use ${tName} as reference`;
 
     const scored = series.filter((d) => d.s != null && d.n >= MIN_VOTES);
-    const cw = 320, ch = 190, m = { t: 10, r: 10, b: 22, l: 32 };
+    const cw = 320, ch = 150, m ={ t: 10, r: 10, b: 22, l: 32 };
     const x = d3.scaleLinear([Y0, Y1], [m.l, cw - m.r]);
     chartX = x;
     const yS = d3.scaleLinear([0, 1], [ch - m.b, m.t]);
@@ -360,7 +367,7 @@
     const c = d3.select(chartEl).append("svg").attr("viewBox", `0 0 ${cw} ${ch}`)
       .attr("role", "img").attr("aria-label", `Line chart of ${tName}'s agreement with ${rName} by session`);
     [0, 0.25, 0.5, 0.75, 1].forEach((v) => {
-      c.append("line").attr("class", v === 0 ? "baseline" : "gridline").attr("x1", m.l).attr("x2", cw - m.r).attr("y1", yS(v)).attr("y2", yS(v));
+      c.append("line").attr("class", v === 0 ? "baseline" : v === 0.5 ? "midline" : "gridline").attr("x1", m.l).attr("x2", cw - m.r).attr("y1", yS(v)).attr("y2", yS(v));
       c.append("text").attr("class", "tick-label").attr("x", m.l - 6).attr("y", yS(v) + 3.5).attr("text-anchor", "end").text(v === 0 || v === 1 ? v : v.toFixed(2));
     });
     [1950, 1970, 1990, 2010].forEach((v) =>
@@ -451,7 +458,6 @@
   function setRef(c) { state.ref = c; if (state.sel === c) state.sel = null; update(); }
   function select(c) { state.sel = c; writeHash(); renderMap(); renderChart(); }
 
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { buildColor(); renderMap(); renderChart(); });
   document.addEventListener("keydown", (e) => {
     if (e.target.matches("input, select, textarea") || (e.key === " " && e.target.matches("button, summary"))) return;
     if (e.key === "ArrowRight") setYear(Math.min(Y1, state.year + 1));

@@ -105,3 +105,16 @@ def test_geo_covers_every_voting_state():
         # Late joiners of 1991/1992 cast no contested votes before the snapshot date (see README).
         allowed = {1991: {331, 344, 346, 349, 359, 371, 373, 703}, 1992: {316, 317}}.get(y, set())
         assert missing <= allowed | seated, (y, sorted(missing - allowed))
+
+
+@pytest.mark.skipif(not (DATA / "geo.json").exists(), reason="geo output missing")
+def test_geo_keeps_large_landmasses():
+    """Simplification once dropped mainland Australia; check big countries keep their area."""
+    import geopandas as gpd
+
+    geo = gpd.read_file(DATA / "geo.json").set_crs(4326, allow_override=True)
+    km2 = geo.to_crs("ESRI:54009").area / 1e6
+    expected = {"Australia": 7.69e6, "Brazil": 8.5e6, "Canada": 9.0e6, "India": 3.2e6}
+    for name, area in expected.items():
+        got = km2[geo["n"] == name]
+        assert len(got) and (got > 0.9 * area).all(), (name, list(got.round()))

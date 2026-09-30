@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UN Alignment</title>
 <meta name="description" content="How closely each country's UN General Assembly votes align with a chosen country, session by session, 1946–2022, on historical borders.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22%232a78d6%22/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22%233fb4ff%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,6 +19,10 @@
     <label class="ctl">
       <span class="ctl-label">Reference country</span>
       <select id="ref"></select>
+    </label>
+    <label class="ctl">
+      <span class="ctl-label">Chart a country over time</span>
+      <select id="pick"><option value="">Click the map or choose…</option></select>
     </label>
     <div class="ctl year-ctl">
       <span class="ctl-label" id="year-label-caption">Session</span>
@@ -34,23 +38,16 @@
 
   <p id="year-info" class="year-info" aria-live="polite"></p>
 
-  <div class="layout">
-    <figure class="map-wrap">
+  <figure class="map-wrap">
+    <div class="map-stage">
       <svg id="map" role="img" aria-label="World map of UN voting alignment"></svg>
       <div class="zoom" aria-label="Zoom">
         <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
         <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
         <button type="button" data-zoom="reset" aria-label="Reset zoom">⟲</button>
       </div>
-      <div id="tooltip" class="tooltip" role="status" hidden></div>
-      <figcaption id="legend" class="legend"></figcaption>
-    </figure>
 
-    <aside id="panel" class="panel" aria-live="polite">
-      <div id="panel-empty" class="panel-empty">
-        <p><strong>Click a country</strong> to see its alignment with the reference country over time.</p>
-      </div>
-      <div id="panel-body" hidden>
+      <aside id="panel" class="panel" aria-live="polite" hidden>
         <div class="panel-head">
           <h2 id="chart-title"></h2>
           <button id="panel-close" type="button" aria-label="Close chart">×</button>
@@ -60,14 +57,16 @@
         <p id="chart-key" class="chart-key"></p>
         <div class="panel-actions">
           <button id="make-ref" type="button">Use as reference</button>
+          <details class="table-view">
+            <summary>Data table</summary>
+            <div class="table-scroll"><table id="chart-table"></table></div>
+          </details>
         </div>
-        <details class="table-view">
-          <summary>Data table</summary>
-          <div class="table-scroll"><table id="chart-table"></table></div>
-        </details>
-      </div>
-    </aside>
-  </div>
+      </aside>
+    </div>
+    <div id="tooltip" class="tooltip" role="status" hidden></div>
+    <figcaption id="legend" class="legend"></figcaption>
+  </figure>
 
   <section class="about" id="about">
     <h2>How to read this</h2>

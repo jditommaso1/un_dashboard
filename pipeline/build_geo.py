@@ -31,6 +31,7 @@ from unvotes import ROOT, border_snapshots, contested_decisions, load_config, pr
 EQUAL_AREA = "ESRI:54009"
 OPEN_END = pd.Timestamp("2099-12-31")
 SIMPLIFY_TOLERANCE = 0.01   # Visvalingam area, degrees^2; checked visually at world scale
+FALLBACK_TOLERANCE = 0.05   # Douglas-Peucker, degrees; for features toposimplify mangles
 QUANTIZATION = 1e5
 warnings.filterwarnings("ignore", message="Geometry is in a geographic CRS")
 SMALL_KM2 = 3000            # features below this get a capital dot on the map
@@ -254,6 +255,15 @@ def main() -> None:
     simp = topo.toposimplify(SIMPLIFY_TOLERANCE, simplify_algorithm="vw", simplify_with="simplification",
                              prevent_oversimplify=True).to_gdf().sort_values("i")
     simp = simp.set_crs(4326, allow_override=True)
+    # toposimplify occasionally collapses a whole ring (it dropped mainland Australia, keeping
+    # only Tasmania). Re-simplify any feature that lost most of its area on its own.
+    raw_km2 = allf.to_crs(EQUAL_AREA).area.values / 1e6
+    simp_km2 = simp.to_crs(EQUAL_AREA).area.values / 1e6
+    geoms = list(simp.geometry.values)
+    for j in [j for j in range(len(allf)) if raw_km2[j] > MIN_PIECE_KM2 and simp_km2[j] < 0.5 * raw_km2[j]]:
+        geoms[j] = allf.geometry.iloc[j].simplify(FALLBACK_TOLERANCE, preserve_topology=True)
+        print(f"re-simplified {allf.country_name.iloc[j]}: {simp_km2[j]:,.0f} of {raw_km2[j]:,.0f} km2 survived toposimplify")
+    simp = gpd.GeoDataFrame(geometry=geoms, crs=4326)
 
     props = []
     for r in allf.itertuples():
