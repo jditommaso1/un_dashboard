@@ -1,0 +1,12 @@
+# Used ONLY by the line chart, never by the map. For each successor state, years up to
+# and including `until` are drawn as a dashed segment labelled `label`, using the
+# `predecessor` code's alignment. When predecessor == successor, UNGA-DM already keeps
+# one code for both (USSR/Russia, Yugoslavia/Serbia); the row only marks the dashed period.
+successor,predecessor,until,label
+365,365,1990,Soviet Union
+345,345,1991,Yugoslavia (SFRY)
+255,260,1989,West Germany (FRG)
+679,678,1989,North Yemen (YAR)
+316,315,1992,Czechoslovakia
+317,315,1992,Czechoslovakia
+710,713,1970,China seat held by the Republic of China

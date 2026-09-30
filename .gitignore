@@ -1,0 +1,5 @@
+data/raw/
+scratch/
+.venv/
+__pycache__/
+.pytest_cache/

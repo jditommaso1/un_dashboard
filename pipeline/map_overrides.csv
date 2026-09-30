@@ -1,0 +1,12 @@
+# Map-only rules applied by the site for a CShapes COW code over session years (inclusive).
+#   score_from      colour the polygon with another seat's score
+#   represented_by  polygon has no seat of its own; drawn with the "represented" pattern
+#   seat_label      text shown instead of "not a UN member"
+kind,cow,from_year,to_year,value,label
+score_from,710,1946,1949,713,China — seat held by the Republic of China government
+represented_by,710,1950,1970,713,Represented at the UN by the Republic of China
+score_from,120,1946,2022,220,French Guiana — overseas department of France
+score_from,585,1946,2022,220,Réunion — overseas department of France
+score_from,65,1946,2022,220,Guadeloupe — overseas department of France
+score_from,66,1946,2022,220,Martinique — overseas department of France
+seat_label,345,1993,1999,,Seat vacant — the Federal Republic of Yugoslavia was not admitted until 2000

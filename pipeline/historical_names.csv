@@ -1,0 +1,31 @@
+# Display names for a COW code over a span of session years (inclusive).
+# UNGA-DM's original_seat_name is constant per state, so time-varying names are kept here.
+cow,from_year,to_year,name
+365,1946,1990,Soviet Union
+345,1946,1991,Yugoslavia
+345,2000,2002,Federal Republic of Yugoslavia
+345,2003,2005,Serbia and Montenegro
+369,1946,1990,Ukrainian SSR
+370,1946,1990,Byelorussian SSR
+713,1946,1970,China (Republic of China)
+651,1958,1970,United Arab Republic
+678,1947,1989,Yemen Arab Republic (North Yemen)
+680,1967,1989,"People's Democratic Republic of Yemen (South Yemen)"
+260,1973,1989,West Germany (Federal Republic)
+265,1973,1989,East Germany (Democratic Republic)
+315,1946,1992,Czechoslovakia
+490,1971,1996,Zaire
+434,1960,1974,Dahomey
+439,1960,1983,Upper Volta
+437,1960,1984,Ivory Coast
+510,1961,1963,Tanganyika
+572,1968,2017,Swaziland
+343,1992,2018,The former Yugoslav Republic of Macedonia
+775,1948,1988,Burma
+780,1955,1971,Ceylon
+800,1946,1948,Siam
+811,1970,1989,Cambodia (Khmer Republic / Democratic Kampuchea)
+580,1960,1974,Malagasy Republic
+820,1957,1962,Federation of Malaya
+402,1975,2012,Cape Verde
+60,1983,1987,Saint Christopher and Nevis

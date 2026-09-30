@@ -1,0 +1,53 @@
+# Build configuration for the UNGA alignment pipeline.
+# Every choice that affects the published scores lives here; site/data/meta.json
+# echoes the values used so the site can document them.
+
+source:
+  # UNGA-DM (Fjelstul, Hug & Kilby), University of Geneva.
+  votes_url: https://unvotes.unige.ch/download_file/13/1
+  decisions_url: https://unvotes.unige.ch/download_file/12/1
+  codebook_url: https://unvotes.unige.ch/download_file/1/1
+  votes_csv: data/raw/ungadm/all_votes.csv
+  decisions_csv: data/raw/ungadm/all_decisions.csv
+  codebook_pdf: data/raw/ungadm/codebook.pdf
+
+# "amended_vote" includes corrections a state notified to the Secretariat after
+# the vote; "original_vote" is the vote as recorded in the meeting record.
+vote_column: amended_vote
+
+# Which recorded votes count. UNGA-DM decision_topic values:
+#   draft resolution | separate vote | amendment | motion
+decision_topics: [draft resolution]
+
+year_basis: session          # session | calendar
+# Regular sessions are dated by number (session n -> 1945 + n). Special and
+# emergency special sessions are assigned by meeting date: on/after this
+# month-day they count toward that year's session, otherwise the previous one.
+session_cutoff: "09-01"
+
+contested:
+  enabled: true
+  # A vote is contested unless the largest bloc exceeds this share of the
+  # denominator (i.e. uncontested = more than 90% voted the same way).
+  threshold: 0.90
+  denominator: [in favor, against, abstaining]
+
+# Agreement weights between two states' votes. Absences are always excluded.
+scoring:
+  same: 1.0            # yes/yes, no/no, abstain/abstain
+  yes_vs_no: 0.0
+  vote_vs_abstain: 0.5 # yes/abstain or no/abstain
+
+# The site treats a pair-year with fewer scored votes as "too few votes".
+min_votes: 10
+
+# Session years a state was barred from participating, shown as "suspended"
+# rather than "did not vote". UNGA-DM codes South Africa's exclusion
+# inconsistently (partly "not voting", partly "not voting (suspended)").
+suspensions:
+  - {cow: 560, from: 1974, to: 1993, note: "South Africa's credentials rejected; excluded from participation 1974-1994"}
+
+# Reference countries listed first in the dropdown.
+featured_refs: [2, 710, 365, 750, 200, 220, 255, 740, 140, 560, 666, 630]
+
+output_dir: site/data
