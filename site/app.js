@@ -100,10 +100,10 @@
   const K = Math.cos(23.07 * Math.PI / 180); // 0.92
   const eqRaw = (l, p) => [l * K, p];
   eqRaw.invert = (x, y) => [x / K, y];
-  const projection = d3.geoProjection(eqRaw).fitWidth(W - 16, fc);
+  const projection = d3.geoProjection(eqRaw).fitWidth(W, fc);
   const path = d3.geoPath(projection);
   const [[, by0], [, by1]] = path.bounds(fc);
-  projection.translate([projection.translate()[0] + 8, projection.translate()[1] - by0 + 8]);
+  projection.translate([projection.translate()[0], projection.translate()[1] - by0 + 8]);
   const H = Math.ceil(by1 - by0 + 16);
 
   const svg = d3.select("#map").attr("viewBox", `0 0 ${W} ${H}`);
@@ -132,7 +132,7 @@
 
   svg.append("rect").attr("class", "ocean").attr("width", W).attr("height", H);
   const root = svg.append("g").attr("filter", "url(#glow)").append("g");
-  root.append("path").attr("class", "graticule").attr("d", path(d3.geoGraticule10()));
+  root.append("path").attr("class", "graticule").attr("d", path(d3.geoGraticule().extent([[-180, -90], [180, 90]]).step([10, 10])()));
   const countryPaths = root.append("g").selectAll("path").data(features).join("path")
     .attr("class", "country").attr("d", path);
   const dotted = features.filter((f) => f.properties.pt);
