@@ -52,7 +52,7 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 /* Map */
 .map-wrap { position: relative; width: 92%; margin: 0 auto; background: var(--ocean); border-radius: 12px; box-shadow: 0 0 0 1px var(--ring), 0 0 60px rgba(63, 180, 255, 0.06); overflow: hidden; }
 .map-stage { position: relative; }
-#map { display: block; width: 100%; height: auto; max-height: calc(100vh - 120px); min-height: 220px; touch-action: none; }
+#map { display: block; width: 100%; height: auto; touch-action: none; }
 #map .ocean { fill: var(--ocean); }
 #map .graticule { fill: none; stroke: var(--grid); stroke-width: 0.6px; vector-effect: non-scaling-stroke; }
 #map .country { stroke: var(--border); stroke-width: 0.6px; vector-effect: non-scaling-stroke; cursor: pointer; }
